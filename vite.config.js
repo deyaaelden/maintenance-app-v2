@@ -1,3 +1,18 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-export default defineConfig({ plugins: [react()], base: './' })
+{
+  "name": "maintenance-app",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "firebase": "^10.0.0",
+    "recharts": "^2.15.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.0",
+    "vite": "^5.0.0"
+  }
+}
