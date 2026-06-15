@@ -995,7 +995,29 @@ export default function App(){
 
  // ── Firebase sync ──
  const [dataLoaded,setDataLoaded]=useState(false);
+ const [refreshing,setRefreshing]=useState(false);
  const localWrite=useRef(false);
+
+ const refreshFromFirebase=async()=>{
+  setRefreshing(true);
+  try{
+   const {db}=await import('./firebase');
+   const {doc,getDoc}=await import('firebase/firestore');
+   const keys=['machines','schedules','workOrders','personnel','taskTypes','notes','settings','auth'];
+   const snaps=await Promise.all(keys.map(k=>getDoc(doc(db,'appData',k))));
+   const [m,s,w,p,tt,n,set,auth]=snaps.map(x=>x.exists()?x.data():null);
+   if(m?.items)setMachines(m.items);
+   if(s?.items)setSchedules(s.items.map(x=>x.status==='done'?x:{...x,status:diffDays(x.nextDate)<0?'overdue':'upcoming'}));
+   if(w?.items)setWorkOrders(w.items);
+   if(p?.items)setPersonnel(p.items);
+   if(tt?.items)setTaskTypes(tt.items);
+   if(n?.content!==undefined)setNotes(n.content);
+   if(set)setSettings(prev=>({...prev,...set}));
+   if(auth?.supPass)setSupPass(auth.supPass);
+   if(auth?.userPass)setUserPass(auth.userPass);
+  }catch(e){console.error('Refresh error:',e);}
+  setRefreshing(false);
+ };
 
  useEffect(()=>{
   const init=async()=>{
@@ -1091,6 +1113,7 @@ export default function App(){
      {isSup&&<button onClick={()=>setShowNotif(true)} style={{...bS(alertCount>0?C.red:'#f1f5f9',alertCount>0?'#fff':C.gray),position:'relative',padding:'7px 12px'}}>
       🔔{alertCount>0&&<span style={{position:'absolute',top:-4,right:-4,backgroundColor:C.red,color:'#fff',borderRadius:'50%',width:18,height:18,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:'bold'}}>{alertCount}</span>}
      </button>}
+     <button onClick={refreshFromFirebase} style={bS(refreshing?'#f1f5f9':C.green+'22',refreshing?C.gray:C.green)} title={T.lang==='ar'?'تحديث البيانات':'Refresh Data'}>{refreshing?'⏳':'🔄'}</button>
      <button onClick={()=>setLang(l=>l==='ar'?'en':'ar')} style={bS('#e0f2fe',C.accent)}>🌐 {T.langBtn}</button>
      <div style={{display:'flex',alignItems:'center',gap:8}}>
       <div style={{fontSize:12,fontWeight:'bold',color:C.primary,padding:'4px 10px',backgroundColor:isSup?C.primary+'15':C.accent+'15',borderRadius:8}}>
