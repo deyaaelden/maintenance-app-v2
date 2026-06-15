@@ -1,0 +1,16 @@
+import { initializeApp }  from 'firebase/app';
+import { getFirestore }   from 'firebase/firestore';
+import { getStorage }     from 'firebase/storage';
+
+// ← ضع هنا بياناتك من Firebase Console
+const firebaseConfig = {
+  apiKey:            "AIzaSyAPUCa9QnjWwDBIbnaOpAHijPksbWOMB-w",
+  authDomain:        "maintenance-app-f22f1.firebaseapp.com",
+  projectId:         "maintenance-app-f22f1",
+  storageBucket:     "maintenance-app-f22f1.firebasestorage.app",
+  messagingSenderId: "714599744322",
+  appId:             "1:714599744322:web:55dc4573773f138a41fedb"
+};
+
+const app    = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
