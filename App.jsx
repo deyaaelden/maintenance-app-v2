@@ -209,33 +209,11 @@ ${html}<div class="ftr"><button class="pb" onclick="window.print()">🖨️ ${T.
 </body></html>`);win.document.close();};
 
 // ── INITIAL DATA ───────────────────────────────────────
-const initTaskTypes=[{id:1,key:'preventive',ar:'وقائية',en:'Preventive'},{id:2,key:'corrective',ar:'تصحيحية',en:'Corrective'},{id:3,key:'inspection',ar:'فحص',en:'Inspection'},{id:4,key:'lubrication',ar:'تشحيم',en:'Lubrication'},{id:5,key:'calibration',ar:'معايرة',en:'Calibration'}];
-const initMachines=[
- {id:1,name:'ماكينة الخلط الرئيسية',model:'Mixer Pro 500',serial:'MX-2021-001',dept:'الإنتاج',status:'working',installDate:'2021-03-15',machineData:'القدرة: 500 لتر\nالسرعة: 60 دورة/دقيقة\nالجهد: 380V / 50Hz',manualRef:'MX-500-OM-2021',parts:[{id:1,name:'حزام التشغيل',qty:2,supplier:'شركة التقنية الصناعية',contact:'0912345678',method:'phone'}],manualFiles:[]},
- {id:2,name:'ماكينة التعبئة والتغليف',model:'PackMaster 200',serial:'PK-2020-003',dept:'التعبئة',status:'working',installDate:'2020-07-20',machineData:'سرعة التعبئة: 200 كيس/ساعة',manualRef:'PM-200-OM-2020',parts:[],manualFiles:[]},
- {id:3,name:'سير ناقل الإنتاج',model:'Conveyor CB-10',serial:'CB-2019-007',dept:'الإنتاج',status:'maint',installDate:'2019-11-10',machineData:'الطول: 10 متر',manualRef:'CB-10-OM-2019',parts:[],manualFiles:[]},
- {id:4,name:'وحدة التبريد المركزية',model:'CoolMax 1000',serial:'CM-2022-002',dept:'التخزين',status:'working',installDate:'2022-01-05',machineData:'درجة التبريد: -5 إلى +5',manualRef:'CM-1000-OM-2022',parts:[{id:1,name:'فلتر الهواء',qty:3,supplier:'مؤسسة التبريد المتقدم',contact:'0911222333',method:'phone'}],manualFiles:[]},
- {id:5,name:'لوحة الكهرباء الرئيسية',model:'Schneider MCC-200',serial:'EL-2018-001',dept:'الكهرباء',status:'working',installDate:'2018-06-01',machineData:'التغذية: 380V / 3Phase',manualRef:'SCH-MCC200-2018',parts:[],manualFiles:[]},
-];
-const initSchedules=[
- {id:1,machineId:1,machineName:'ماكينة الخلط الرئيسية',task:'فحص وتشحيم التروس',taskType:'lubrication',freq:'weekly',nextDate:fmtD(addD(TODAY,2)),lastCompleted:fmtD(subD(TODAY,5)),assignedId:1,assignedName:'أحمد محمد',status:'upcoming',notifyAfterDays:3},
- {id:2,machineId:1,machineName:'ماكينة الخلط الرئيسية',task:'استبدال حزام التشغيل',taskType:'preventive',freq:'annual',nextDate:fmtD(addD(TODAY,30)),lastCompleted:fmtD(subD(TODAY,335)),assignedId:2,assignedName:'خالد إبراهيم',status:'upcoming',notifyAfterDays:5},
- {id:3,machineId:2,machineName:'ماكينة التعبئة والتغليف',task:'تنظيف وضبط الشفرات',taskType:'preventive',freq:'monthly',nextDate:fmtD(addD(TODAY,5)),lastCompleted:fmtD(subD(TODAY,25)),assignedId:2,assignedName:'خالد إبراهيم',status:'upcoming',notifyAfterDays:5},
- {id:4,machineId:3,machineName:'سير ناقل الإنتاج',task:'فحص الحزام وضبط التوتر',taskType:'inspection',freq:'weekly',nextDate:fmtD(subD(TODAY,3)),lastCompleted:fmtD(subD(TODAY,10)),assignedId:1,assignedName:'أحمد محمد',status:'overdue',notifyAfterDays:2},
- {id:5,machineId:4,machineName:'وحدة التبريد المركزية',task:'تنظيف الفلاتر',taskType:'preventive',freq:'custom',nextDate:fmtD(addD(TODAY,10)),lastCompleted:fmtD(subD(TODAY,20)),assignedId:3,assignedName:'يوسف العلي',status:'upcoming',notifyAfterDays:5,customFreqNum:45,customFreqUnit:'d'},
- {id:6,machineId:5,machineName:'لوحة الكهرباء الرئيسية',task:'فحص التوصيلات',taskType:'inspection',freq:'quarterly',nextDate:fmtD(subD(TODAY,4)),lastCompleted:fmtD(subD(TODAY,94)),assignedId:4,assignedName:'عمر الصالح',status:'overdue',notifyAfterDays:2},
-];
-const initWorkOrders=[
- {id:1,machineId:1,machineName:'ماكينة الخلط الرئيسية',task:'تشحيم التروس',date:fmtD(subD(TODAY,7)),techId:1,techName:'أحمد محمد',duration:2,notes:'تم التشحيم الكامل'},
- {id:2,machineId:5,machineName:'لوحة الكهرباء الرئيسية',task:'إصلاح قاطع الدورة',date:fmtD(subD(TODAY,14)),techId:4,techName:'عمر الصالح',duration:3,notes:'استبدال القاطع'},
-];
-const initPersonnel=[
- {id:1,name:'أحمد محمد',role:'فني أول',type:'internal',phone:'0912345678',email:'ahmed@factory.com',fax:'',specialty:'ميكانيكا'},
- {id:2,name:'خالد إبراهيم',role:'فني',type:'internal',phone:'0923456789',email:'khalid@factory.com',fax:'',specialty:'ميكانيكا وهيدروليك'},
- {id:3,name:'يوسف العلي',role:'فني تبريد',type:'internal',phone:'0934567890',email:'yousef@factory.com',fax:'',specialty:'تبريد وتكييف'},
- {id:4,name:'عمر الصالح',role:'كهربائي أول',type:'internal',phone:'0945678901',email:'omar@factory.com',fax:'',specialty:'كهرباء صناعية'},
- {id:5,name:'شركة التقنية الصناعية',role:'مزود خدمة',type:'external',phone:'0211234567',email:'info@industrial-tech.com',fax:'0211234568',specialty:'صيانة الآلات الثقيلة'},
-];
+const initTaskTypes=[];
+const initMachines=[];
+const initSchedules=[];
+const initWorkOrders=[];
+const initPersonnel=[];
 
 // ── SHARED UI ─────────────────────────────────────────
 function StatCard({icon,title,value,color,sub}){
