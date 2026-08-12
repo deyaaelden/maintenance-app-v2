@@ -100,6 +100,7 @@ ar:{dir:'rtl',lang:'ar',langBtn:'English',appName:'إدارة الصيانة ا�
  lastComp:'آخر إنجاز',
  settingsTitle:'الإعدادات',changePass:'تغيير كلمة مرور المشرف',changeUserPass:'تغيير كلمة مرور المستخدم',currPass:'الكلمة الحالية',newPass:'الكلمة الجديدة',confirmPass:'تأكيد الكلمة',passChanged:'✅ تم التغيير بنجاح',passMismatch:'كلمتا المرور غير متطابقتين',passWrong:'كلمة المرور الحالية خاطئة',
  companyName:'اسم الشركة/المصنع',bgImage:'صورة خلفية التطبيق',bgOpacity:'شفافية الخلفية',chooseBg:'اختر صورة',removeBg:'إزالة الخلفية',
+ bgRotation:'تدوير الخلفية',bgWidth:'عرض الخلفية',bgHeight:'طول الخلفية',bgSizeNote:'اتركه فارغاً لتغطية كاملة تلقائية',bgLocationsTitle:'أماكن ظهور الخلفية',bgLocLogin:'شاشة تسجيل الدخول',bgLocSidebarFull:'كامل القائمة الجانبية',bgLocSidebarBottom:'المساحة الفارغة أسفل القائمة',bgResetBtn:'↺ إعادة ضبط',
  faxF:'رقم الفاكس',
  totalMach:'إجمالي الآلات',upcomingT:'مهام قادمة',overdueT:'مهام متأخرة',completedW:'أعمال منجزة',inMaint:'في الصيانة',needsAttn:'يحتاج تدخل فوري',completionPct:'نسبة التنفيذ',
  overdueWarn:'⚠️ تنبيه: مهام صيانة متأخرة',upcomingSec:'مواعيد الصيانة القادمة',latestSec:'آخر الأعمال المنجزة',machStatus:'حالة الآلات والمعدات',noUpcoming:'لا توجد مهام قادمة',respons:'المسؤول',
@@ -141,6 +142,7 @@ en:{dir:'ltr',lang:'en',langBtn:'عربي',appName:'Maintenance Management',
  lastComp:'Last Completed',
  settingsTitle:'Settings',changePass:'Change Supervisor Password',changeUserPass:'Change User Password',currPass:'Current Password',newPass:'New Password',confirmPass:'Confirm Password',passChanged:'✅ Password changed',passMismatch:"Passwords don't match",passWrong:'Wrong current password',
  companyName:'Company / Factory Name',bgImage:'App Background Image',bgOpacity:'Background Opacity',chooseBg:'Choose Image',removeBg:'Remove Background',
+ bgRotation:'Background Rotation',bgWidth:'Background Width',bgHeight:'Background Height',bgSizeNote:'Leave empty for automatic full cover',bgLocationsTitle:'Where the Background Appears',bgLocLogin:'Login Screen',bgLocSidebarFull:'Full Sidebar',bgLocSidebarBottom:'Empty Space Below Menu',bgResetBtn:'↺ Reset',
  faxF:'Fax Number',
  totalMach:'Total Machines',upcomingT:'Upcoming',overdueT:'Overdue',completedW:'Completed',inMaint:'in maintenance',needsAttn:'Needs immediate attention',completionPct:'Completion Rate',
  overdueWarn:'⚠️ Warning: Overdue Tasks',upcomingSec:'Upcoming Maintenance',latestSec:'Latest Completed',machStatus:'Machine Status',noUpcoming:'No upcoming tasks',respons:'Responsible',
@@ -181,6 +183,41 @@ const tMethod=(k,T)=>({phone:T.phoneM,email:T.emailM,whatsapp:T.whatsappM,visit:
 const sBadge=s=>({working:'g',maint:'y',broken:'r',upcoming:'b',overdue:'r',done:'g'}[s]||'b');
 const unitMap=lang=>({d:lang==='ar'?'أيام':'days',w:lang==='ar'?'أسابيع':'weeks',m:lang==='ar'?'شهور':'months',y:lang==='ar'?'سنوات':'years'});
 const displayFreq=(s,T)=>{if(s.freq==='custom'){const u=unitMap(T.lang);return(T.every||'Every')+' '+(s.customFreqNum||1)+' '+(u[s.customFreqUnit]||'');}return tFreq(s.freq,T);};
+
+// ── BACKGROUND IMAGE HELPERS (تدوير/حجم/أماكن ظهور الخلفية) ──
+const DEFAULT_BG_LOCATIONS={login:true,sidebarFull:true,sidebarBottom:false};
+const bgShownAt=(settings,key)=>{
+ if(!settings?.bgImage)return false;
+ const loc=settings.bgLocations||DEFAULT_BG_LOCATIONS;
+ return key in loc?!!loc[key]:!!DEFAULT_BG_LOCATIONS[key];
+};
+// دالة موحّدة تحسب ستايل طبقة الخلفية (الحجم/الشفافية) بناءً على إعدادات المستخدم
+const bgLayerStyle=(settings,extra={})=>({
+ position:'absolute',inset:0,overflow:'hidden',pointerEvents:'none',
+ ...extra
+});
+// الطبقة الداخلية التي تحمل الصورة فعلياً (منفصلة لتفادي قصّ الزوايا عند التدوير)
+const bgImageLayerStyle=settings=>{
+ const w=parseFloat(settings.bgWidth);
+ const h=parseFloat(settings.bgHeight);
+ const bgSize=(w>0||h>0)?`${w>0?w+'%':'auto'} ${h>0?h+'%':'auto'}`:'cover';
+ const rot=parseFloat(settings.bgRotation)||0;
+ return {
+  position:'absolute',inset:0,
+  backgroundImage:`url(${settings.bgImage})`,
+  backgroundSize:bgSize,
+  backgroundPosition:'center',
+  backgroundRepeat:'no-repeat',
+  opacity:settings.bgOpacity||0.1,
+  transform:rot?`rotate(${rot}deg) scale(1.3)`:undefined,
+  transformOrigin:'center center'
+ };
+};
+// مكوّن جاهز لعرض طبقة الخلفية في أي حاوية (يحترم اختيار الأماكن)
+const BgLayer=({settings,locationKey,zIndex=0})=>{
+ if(!bgShownAt(settings,locationKey))return null;
+ return <div style={bgLayerStyle(settings,{zIndex})}><div style={bgImageLayerStyle(settings)}/></div>;
+};
 
 // ── PRINT ─────────────────────────────────────────────
 const doPrint=(html,T,title,hAlign)=>{
@@ -285,7 +322,7 @@ function LoginScreen({T,onLogin,supervisorPass,userPass,settings}){
   else{setErr(true);}
  };
  return <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Tahoma,Arial,sans-serif',direction:T.dir,position:'relative',overflow:'hidden',backgroundColor:'#f1f5f9'}}>
-  {settings.bgImage&&<div style={{position:'absolute',inset:0,backgroundImage:`url(${settings.bgImage})`,backgroundSize:'cover',backgroundPosition:'center',opacity:settings.bgOpacity||0.15}}/>}
+  <BgLayer settings={settings} locationKey="login"/>
   <div style={{backgroundColor:'rgba(255,255,255,0.97)',borderRadius:20,padding:40,width:400,boxShadow:'0 8px 30px rgba(0,0,0,0.15)',textAlign:'center',position:'relative'}}>
    <div style={{fontSize:56,marginBottom:12}}>🏭</div>
    <h2 style={{color:C.primary,fontSize:20,marginBottom:4}}>{T.appName}</h2>
@@ -931,9 +968,35 @@ function Settings({T,supervisorPass,setSupervisorPass,userPass,setUserPass,setti
     <input ref={fileRef} type="file" accept="image/*" style={{display:'none'}} onChange={handleBg}/>
     {settings.bgImage&&<img src={settings.bgImage} alt="bg" style={{height:60,borderRadius:8,border:'1px solid #e2e8f0'}}/>}
    </div>
-   {settings.bgImage&&<div style={{marginTop:14}}>
-    <label style={lbl}>{T.bgOpacity}: {Math.round((settings.bgOpacity||0.1)*100)}%</label>
-    <input type="range" min="5" max="50" value={Math.round((settings.bgOpacity||0.1)*100)} onChange={e=>setSettings(p=>({...p,bgOpacity:e.target.value/100}))} style={{width:'200px'}}/>
+   {settings.bgImage&&<div style={{marginTop:14,display:'flex',flexDirection:'column',gap:16}}>
+    <div>
+     <label style={lbl}>{T.bgOpacity}: {Math.round((settings.bgOpacity||0.1)*100)}%</label>
+     <input type="range" min="5" max="50" value={Math.round((settings.bgOpacity||0.1)*100)} onChange={e=>setSettings(p=>({...p,bgOpacity:e.target.value/100}))} style={{width:'100%',maxWidth:300}}/>
+    </div>
+    <div>
+     <label style={lbl}>{T.bgRotation}: {settings.bgRotation||0}°</label>
+     <input type="range" min="-180" max="180" step="5" value={settings.bgRotation||0} onChange={e=>setSettings(p=>({...p,bgRotation:parseInt(e.target.value)}))} style={{width:'100%',maxWidth:300}}/>
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,maxWidth:400}}>
+     <FG l={T.bgWidth+' (%)'}><input style={iS(T.dir)} type="number" min="0" max="500" placeholder="Cover" value={settings.bgWidth||''} onChange={e=>setSettings(p=>({...p,bgWidth:e.target.value}))}/></FG>
+     <FG l={T.bgHeight+' (%)'}><input style={iS(T.dir)} type="number" min="0" max="500" placeholder="Cover" value={settings.bgHeight||''} onChange={e=>setSettings(p=>({...p,bgHeight:e.target.value}))}/></FG>
+    </div>
+    <div style={{fontSize:11,color:C.gray}}>💡 {T.bgSizeNote}</div>
+    <div>
+     <label style={lbl}>{T.bgLocationsTitle}</label>
+     <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+      {[['login',T.bgLocLogin],['sidebarFull',T.bgLocSidebarFull],['sidebarBottom',T.bgLocSidebarBottom]].map(([key,label])=>{
+       const active=bgShownAt(settings,key);
+       return <button key={key} style={bS(active?C.accent:'#f1f5f9',active?'#fff':C.gray)}
+        onClick={()=>setSettings(p=>({...p,bgLocations:{...DEFAULT_BG_LOCATIONS,...p.bgLocations,[key]:!bgShownAt(p,key)}}))}>
+        {active?'✓ ':''}{label}
+       </button>;
+      })}
+     </div>
+    </div>
+    <div>
+     <button style={bS('#f1f5f9',C.gray)} onClick={()=>setSettings(p=>({...p,bgRotation:0,bgWidth:'',bgHeight:'',bgOpacity:0.1,bgLocations:{...DEFAULT_BG_LOCATIONS}}))}>{T.bgResetBtn}</button>
+    </div>
    </div>}
   </div>
   <div style={card}>
@@ -985,7 +1048,7 @@ export default function App(){
  const [sideOpen,setSideOpen]=useState(true);
  const [showNotif,setShowNotif]=useState(false);
  const [notes,setNotes]=useState('');
- const [settings,setSettings]=useState({companyName:'',bgImage:null,bgOpacity:0.1});
+ const [settings,setSettings]=useState({companyName:'',bgImage:null,bgOpacity:0.1,bgRotation:0,bgWidth:'',bgHeight:'',bgLocations:{...DEFAULT_BG_LOCATIONS}});
  const T=TR[lang];
  const isSup=userRole==='supervisor';
 
@@ -1092,18 +1155,21 @@ export default function App(){
  if(!userRole) return <LoginScreen T={T} onLogin={role=>{setUserRole(role);setPage('dashboard');}} supervisorPass={supPass} userPass={userPass} settings={settings}/>;
 
  return <div dir={T.dir} style={{display:'flex',height:'100vh',fontFamily:'Tahoma,Arial,sans-serif',overflow:'hidden',fontSize:14,backgroundColor:'#f1f5f9'}}>
-  {settings.bgImage&&<div style={{position:'fixed',inset:0,backgroundImage:'url('+settings.bgImage+')',backgroundSize:'cover',backgroundPosition:'center',opacity:settings.bgOpacity||0.1,zIndex:0,pointerEvents:'none'}}/>}
   <div style={{width:sideOpen?224:56,backgroundColor:C.primary,transition:'width 0.3s',display:'flex',flexDirection:'column',flexShrink:0,overflow:'hidden',position:'relative',zIndex:2}}>
-   <div style={{padding:'15px 12px',borderBottom:'1px solid rgba(255,255,255,0.1)',display:'flex',alignItems:'center',gap:10,whiteSpace:'nowrap'}}>
+   <BgLayer settings={settings} locationKey="sidebarFull"/>
+   <div style={{padding:'15px 12px',borderBottom:'1px solid rgba(255,255,255,0.1)',display:'flex',alignItems:'center',gap:10,whiteSpace:'nowrap',position:'relative',zIndex:1,flex:'0 0 auto'}}>
     <span style={{fontSize:22,flexShrink:0}}>🏭</span>
     {sideOpen&&<div><div style={{color:'#fff',fontSize:12,fontWeight:'bold'}}>{T.appName}</div><div style={{color:'rgba(255,255,255,0.5)',fontSize:10}}>{settings.companyName||''}</div></div>}
    </div>
-   <nav style={{flex:1,padding:'6px 0',overflowY:'auto'}}>
+   <nav style={{flex:'0 1 auto',minHeight:0,padding:'6px 0',overflowY:'auto',position:'relative',zIndex:1}}>
     {nav.map(n=>{const act=page===n.id;return <div key={n.id} onClick={()=>setPage(n.id)} style={{display:'flex',alignItems:'center',gap:10,padding:'11px 14px',cursor:'pointer',backgroundColor:act?'rgba(255,255,255,0.13)':'transparent',borderRight:act&&T.dir==='rtl'?'3px solid #38bdf8':'none',borderLeft:act&&T.dir==='ltr'?'3px solid #38bdf8':'none',color:act?'#38bdf8':'rgba(255,255,255,0.72)',whiteSpace:'nowrap',transition:'all 0.2s',userSelect:'none'}}>
      <span style={{fontSize:16,flexShrink:0}}>{n.icon}</span>{sideOpen&&<span style={{fontSize:13}}>{n.label}</span>}
     </div>;})}
    </nav>
-   <div onClick={()=>setSideOpen(!sideOpen)} style={{padding:'11px 14px',cursor:'pointer',color:'rgba(255,255,255,0.35)',borderTop:'1px solid rgba(255,255,255,0.08)',textAlign:'center',fontSize:11,userSelect:'none'}}>{sideOpen?T.fold:'►'}</div>
+   <div style={{flex:'1 0 0%',minHeight:0,position:'relative'}}>
+    <BgLayer settings={settings} locationKey="sidebarBottom"/>
+   </div>
+   <div onClick={()=>setSideOpen(!sideOpen)} style={{padding:'11px 14px',cursor:'pointer',color:'rgba(255,255,255,0.35)',borderTop:'1px solid rgba(255,255,255,0.08)',textAlign:'center',fontSize:11,userSelect:'none',position:'relative',zIndex:1,flex:'0 0 auto'}}>{sideOpen?T.fold:'►'}</div>
   </div>
   <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',position:'relative',zIndex:1}}>
    <div style={{backgroundColor:'rgba(255,255,255,0.97)',padding:'12px 20px',borderBottom:'1px solid #e2e8f0',display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
